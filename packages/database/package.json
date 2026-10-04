@@ -1,0 +1,17 @@
+{
+  "name": "@venture-sketch/database",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate": "prisma generate",
+    "push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "latest"
+  },
+  "devDependencies": {
+    "prisma": "latest",
+    "typescript": "latest",
+    "@venture-sketch/tsconfig": "workspace:*"
+  }
+}

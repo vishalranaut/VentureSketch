@@ -1,0 +1,14 @@
+{
+  "name": "@venture-sketch/ai",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@venture-sketch/tsconfig": "workspace:*",
+    "@venture-sketch/types": "workspace:*"
+  }
+}

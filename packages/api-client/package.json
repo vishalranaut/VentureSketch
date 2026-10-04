@@ -1,0 +1,10 @@
+{
+  "name": "@venture-sketch/api-client",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "devDependencies": {
+    "typescript": "latest",
+    "@venture-sketch/tsconfig": "workspace:*"
+  }
+}

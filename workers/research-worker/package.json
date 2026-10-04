@@ -1,0 +1,23 @@
+{
+  "name": "@venture-sketch/research-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "nest start",
+    "dev": "nest start --watch",
+    "build": "nest build"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/microservices": "^11.0.0",
+    "bullmq": "^5.0.0",
+    "@venture-sketch/ai": "workspace:*",
+    "@venture-sketch/database": "workspace:*"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "typescript": "^5.0.0",
+    "@venture-sketch/tsconfig": "workspace:*"
+  }
+}

@@ -1,0 +1,451 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  workspaces WorkspaceMember[]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  members   WorkspaceMember[]
+  projects  Project[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String    @default("MEMBER")
+  
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  status      String    @default("DRAFT") // DRAFT, DISCOVERY, VALIDATING, MVP_DEFINED, etc.
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ideas       Idea[]
+  questions   IdeaQuestion[]
+  generations AIGeneration[]
+  features    Feature[]
+  roadmaps    Roadmap[]
+  tasks       Task[]
+  personas    Persona[]
+  problems    Problem[]
+  solutions   Solution[]
+  assumptions Assumption[]
+  reports     ResearchReport[]
+  competitors Competitor[]
+  userFlows   UserFlow[]
+  screens     Screen[]
+  architectures TechnicalArchitecture[]
+  databaseDesigns DatabaseDesign[]
+  apiDesigns  ApiDesign[]
+}
+
+model Idea {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  projectId      String
+  rawDescription String
+  structured     Json?     // Storing the structured product model
+  status         String    @default("ANALYZING") // ANALYZING, CLARIFYING, COMPLETED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  answers        IdeaAnswer[]
+}
+
+model IdeaQuestion {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  projectId    String
+  type         String    // TEXT, SINGLE_CHOICE, MULTI_CHOICE, NUMBER, BOOLEAN
+  question     String
+  options      Json?     // For multiple choice
+  status       String    @default("GENERATED") // GENERATED, SHOWN, ANSWERED, SKIPPED, ARCHIVED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  answers      IdeaAnswer[]
+}
+
+model IdeaAnswer {
+  id           String       @id @default(cuid())
+  workspaceId  String
+  ideaId       String
+  questionId   String
+  value        String       // JSON stringified or raw string
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  idea         Idea         @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  question     IdeaQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model AIGeneration {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  projectId       String
+  userId          String?
+  workflow        String
+  workflowVersion String
+  provider        String
+  model           String
+  promptVersion   String
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  estimatedCost   Float    @default(0)
+  status          String   @default("QUEUED") // QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED
+  inputSnapshot   Json?
+  outputSnapshot  Json?
+  error           String?
+  createdAt       DateTime @default(now())
+
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Feature {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  description String
+  priority    String   // must_have, should_have, nice_to_have
+  complexity  String   // low, medium, high
+  userValue   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stories     UserStory[]
+}
+
+model UserStory {
+  id          String   @id @default(cuid())
+  workspaceId String
+  featureId   String
+  role        String
+  action      String
+  benefit     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  feature     Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade)
+}
+
+model Roadmap {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phases      RoadmapPhase[]
+}
+
+model RoadmapPhase {
+  id          String   @id @default(cuid())
+  workspaceId String
+  roadmapId   String
+  name        String
+  order       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roadmap     Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  phaseId     String
+  title       String
+  description String?
+  status      String   @default("TODO") // TODO, IN_PROGRESS, DONE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase       RoadmapPhase  @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  description String
+  demographics Json?
+  goals       Json?
+  painPoints  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Problem {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  title       String
+  description String
+  severity    String   // low, medium, high
+  frequency   String   // rare, occasional, frequent
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Solution {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  title       String
+  description String
+  feasibility String   // low, medium, high
+  impact      String   // low, medium, high
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Assumption {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  statement   String
+  riskLevel   String   // low, medium, high
+  status      String   @default("UNTESTED") // UNTESTED, VALIDATED, INVALIDATED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ResearchReport {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  query       String
+  summary     String
+  findings    Json?
+  status      String   @default("COMPLETED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sources     ResearchSource[]
+}
+
+model ResearchSource {
+  id          String   @id @default(cuid())
+  workspaceId String
+  reportId    String
+  url         String
+  title       String
+  relevance   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  report      ResearchReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model Competitor {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  website     String?
+  strengths   Json?
+  weaknesses  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model UserFlow {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  nodes       UserFlowNode[]
+}
+
+model UserFlowNode {
+  id          String   @id @default(cuid())
+  workspaceId String
+  flowId      String
+  type        String   // SCREEN, ACTION, CONDITION, END
+  name        String
+  details     Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  flow        UserFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+}
+
+model Screen {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  description String?
+  layout      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  components  ScreenComponent[]
+}
+
+model ScreenComponent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  screenId    String
+  type        String   // BUTTON, INPUT, LIST, HEADER, etc.
+  name        String
+  props       Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  screen      Screen   @relation(fields: [screenId], references: [id], onDelete: Cascade)
+}
+
+model TechnicalArchitecture {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  stack       Json?    // e.g. frontend, backend, database
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  decisions   ArchitectureDecision[]
+}
+
+model ArchitectureDecision {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  architectureId  String
+  title           String
+  context         String
+  decision        String
+  consequences    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  architecture    TechnicalArchitecture @relation(fields: [architectureId], references: [id], onDelete: Cascade)
+}
+
+model DatabaseDesign {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  type        String   // RELATIONAL, DOCUMENT, GRAPH
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  entities    DatabaseEntity[]
+}
+
+model DatabaseEntity {
+  id               String   @id @default(cuid())
+  workspaceId      String
+  databaseDesignId String
+  name             String
+  description      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  databaseDesign   DatabaseDesign @relation(fields: [databaseDesignId], references: [id], onDelete: Cascade)
+  fields           DatabaseField[]
+}
+
+model DatabaseField {
+  id               String   @id @default(cuid())
+  workspaceId      String
+  entityId         String
+  name             String
+  type             String
+  isPrimaryKey     Boolean  @default(false)
+  isNullable       Boolean  @default(false)
+  isUnique         Boolean  @default(false)
+  relationTo       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  entity           DatabaseEntity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+}
+
+model ApiDesign {
+  id          String   @id @default(cuid())
+  workspaceId String
+  projectId   String
+  name        String
+  protocol    String   // REST, GRAPHQL, tRPC
+  baseUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  endpoints   ApiEndpoint[]
+}
+
+model ApiEndpoint {
+  id          String   @id @default(cuid())
+  workspaceId String
+  apiDesignId String
+  method      String
+  path        String
+  description String?
+  requestBody Json?
+  responses   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  apiDesign   ApiDesign @relation(fields: [apiDesignId], references: [id], onDelete: Cascade)
+}
